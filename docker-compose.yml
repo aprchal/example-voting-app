@@ -1,0 +1,52 @@
+version: "3.8"
+
+networks:
+  vote:
+    driver: bridge
+  
+services:
+  vote:
+    image: aprchal/vote:v1
+    build:
+      context: ./vote
+      dockerfile: Dockerfile
+    ports:
+      - 80
+    networks:
+      - vote
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6.0-alpine
+    networks:
+      - vote
+
+  worker:
+    image: aprchal/worker:v1
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    networks:
+      - vote
+    depends_on:
+      - redis
+      - db
+  db:
+    image: postgres:12-alpine
+    networks:
+      - vote
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      
+  result:
+    image: aprchal/result:v1
+    build:
+      context: ./result
+      dockerfile: Dockerfile
+    ports:
+      - 80
+    networks:
+      - vote
+    depends_on:
+      - db
